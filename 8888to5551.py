@@ -8,12 +8,22 @@ from PIL import Image
 assert(len(sys.argv) > 2)
 
 im = Image.open(sys.argv[1])
-assert(im.mode == "RGBA" or im.mode == "RGB")
-RGB = list(zip(
-    np.array(im.getdata(0), np.float),
-    np.array(im.getdata(1), np.float),
-    np.array(im.getdata(2), np.float)
-))
+if im.mode == "RGBA":
+	RGB = list(zip(
+		np.array(im.getdata(0), np.float),
+		np.array(im.getdata(1), np.float),
+		np.array(im.getdata(2), np.float),
+		np.array(im.getdata(3), np.float)
+	))
+elif im.mode == "RGB":
+	RGB = list(zip(
+		np.array(im.getdata(0), np.float),
+		np.array(im.getdata(1), np.float),
+		np.array(im.getdata(2), np.float)
+	))
+else:
+	print ("image format needs to be RGB or RGBA (current: ",im.mode,")")
+	sys.exit()
 
 def cvt5_floor(val):
     return math.floor(val / 8)
@@ -62,6 +72,9 @@ def minimized_average_error(error, i):
 
 out = np.ones(len(RGB), dtype=np.uint16)
 for i in range(0,len(RGB)):
+    transparency = 1
+    if len(in_rgb) > 3 and int(in_rgb[3]) != 1:
+        transparency = 0
     in_rgb = RGB[i]
     out_rgb = (
         cvt5_round(in_rgb[0]),
@@ -72,7 +85,7 @@ for i in range(0,len(RGB)):
         out_rgb[0] * 2048 +
         out_rgb[1] *   64 +
         out_rgb[2] *    2 +
-        1
+        transparency
     )
     error = (
         in_rgb[0] - out_rgb[0] * 8,
